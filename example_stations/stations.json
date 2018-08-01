@@ -1,0 +1,13 @@
+[
+    {
+        "type": "bluetooth"
+    },
+    {
+        "type": "pick",
+        "dir": "exampleStation"
+    },
+    {
+        "type": "dynamic",
+        "dir": "exampleDynamicStation"
+    }
+]

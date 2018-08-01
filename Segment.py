@@ -8,7 +8,7 @@ import os
     Segment.py contains all the logic regarding the creation of segments, their inintializaiton, and the 
      picking of tracks according to the segment's behavior/type.
     
-    For ease of use, buildSegment() is used. Simply plop in the parent directory (typically "stations/[stationName]/dj/"), the 
+    For ease of use, buildSegment() is here. Simply plop in the parent directory (typically "stations/[stationName]/dj/"), the 
      segmentDataDictionary (read from the JSON file by the DynamicStation object, passed through the DJ object), and it'll return
      the appropriate Segment Object to suit your needs. If segmentType doesn't fit or doesn't exist, it'll return a blank segment
      with no tracks while logging an error.
@@ -25,7 +25,7 @@ import os
          repeats should be much less noticable (and likely) with segments
      - CountPickSegment:
        - This is a pick segment that will return between min and max tracks, useful if you want a segment to run more than once but want
-         a little bit of variety in your life
+         a little bit of variety in your life. This will never pick duplicates, and will even lower the max if there aren't enough tracks
      - ChancePickSegment:
        - This is a pick segment that will only play segmentRarity percent of the time, stored as a float between 1.0 and 0.0. 1.0 is 100%
          of the time. 0.5 is 50% of the time, 0.0 is 0%, etc. Useful if you don't want something to run every time.

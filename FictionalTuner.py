@@ -8,6 +8,9 @@ import math
 import sys
 import os
 
+# A freqPoint is just a small class, holding the station and volume for a single point.
+#  the station object can be anything, but it is traditionally an object from the Station
+#  module.
 class freqPoint:
     def __init__(self, station, volume):
         self.station = station
@@ -16,7 +19,8 @@ class freqPoint:
         return "Station: %s, Volume: %s" % (self.station, self.volume)
 
 """
-    fictTuner handles the creation of the tuning spectrum, begins the initialization of all stations, and generates the freqPoints
+    fictTuner handles the creation of the tuning spectrum, begins the initialization of all stations, 
+     and generates the points used on the spectrum
 """
 
 class fictTuner:
@@ -44,63 +48,44 @@ class fictTuner:
             logging.critical("Station.json not found")
         except (ValueError):
             logging.error("Improper station.json")
+        # The program literally cannot run properly without readStationData, so it dies if it doesn't have it.
         assert(self.stationFileData is not None), ("Error in readStationData, shutting down")
         logging.info("Station.json has been found and read properly")
     
-    # This goes through all of the stationFileData to build the station objects needed for buildPoints(). It currently just makes fixed stations
-    # TODO: Make it fully functional
+    # This goes through all of the stationFileData to build the station objects needed for buildPoints().
     def buildStations(self):
         # Build stations here
         self.stations = []
         for stationData in self.stationFileData:
-            # All stations have 'type' as a part of their definition in stations.json
-            stationType = stationData["type"]
-
-            # The Bluetooth station's job is to mute static and turn on the audio of the BT script.
-            # Of course, I actually need to implement the sound controls for bluetooth first.
-
-            # TODO: Implement Bluetooth
-            if(stationType == "bluetooth"):
-                logging.warn("Bluetooth is not implemented. Get on this, Thomas, though I understand you are busy with other stuff.")
-                continue
-            
-            # All station types except for bluetooth have a 'dir' attribute. At this point, it should be safe to grab
-            stationDir = stationData["dir"]
-        
-
-            # Generate stations based upon label
-            if(stationType == "pick"):
-                stationObject = Station.PickStation(stationDir)
-            elif(stationType == "dynamic"):
-                stationObject = Station.DynamicStation(stationDir)
-            else:
-                stationObject = Station.Station(stationDir)
-
-            self.stations.append(stationObject)
-            logging.debug("Station %s has been built" % stationDir)
+            newStation = Station.buildStation(stationData)
+            self.stations.append(newStation)
 
         logging.info("Stations have been built")
 
+    # BuildPoints loops through the whole tuning spectrum to generate a frequency point for each possible position of the tuner
     def buildPoints(self):
-        # Build points here
+        # Generate an empty spectrum, 1024 in length to match the possibility of the tuner
         self.points = [freqPoint(Station.StaticStation(), 0)] * 1024
 
         """
             BuildPoints is done in this pattern/algorithm:
-             - Seperate pie into the neccesary slices, place stations on the slice lines
-             - Iterate through stations/slice lines and flood with the steps from there, creating freq points along the way
+             - Seperate spectrum into the neccesary slices, place stations on the slice lines
+             - Iterate through stations beginnings, inserting the rest of the points required for the station
+               - loadBuffer -> dropoff -> saveZone -> dropoff -> loadBuffer
         """
 
-        # Cutting the pie
+        # Cutting the spectrum
         numStations = len(self.stations)
-        # The algorithm splits the total frequencies (0-1023) by the number of stations plus one. The plus one allows the splits to exist at not the very beginning and end.
+        # The algorithm splits the total frequencies (0-1023) by the number of stations plus one. 
+        #  The addition of one allows wiggle room at the top and bottom of the spectrum.
         frequencySplits = 1023 / (numStations + 1)
 
-        # Beginning per-station iteration
         # Using the pie slice number to find the start of each station. This is the far left, so it is where the safeRadius begins 
         stationStarts = [0] * numStations
         stationTotalRadius = self.safeRadius + self.dropoffRange + self.loadBuffer
         for index in range(numStations):
+            # Station start is the split according to the index (turned into 1-based instead of 0-based) multiplied by the
+            #  distance between stations (frequencySplits), minus the radius of the station (for proper centering)
             stationStarts[index] = (frequencySplits * (index + 1) - stationTotalRadius)
         
         # This is the core of the buildPoints function, and it's an ugly monster. I'm sorry.
@@ -111,12 +96,15 @@ class fictTuner:
 
             logging.debug("Building frequency points from %d to %d for %s" % (stationStart, stationStart + stationTotalRadius, currentStation))
 
-            # Do the math / construction of the points here for splicing later.
+            # Points for each station are built through arrays for the different sections of its tuning spectrum
+            #  these are later spliced in to prevent massive ugly for-loops. It still doesn't look great, but it's a little better.
+
             loadBufferPoints = [freqPoint(currentStation, 0.0)] * (self.loadBuffer)
 
             dropoffPoints = range(self.dropoffRange)
             for dropoffPoint in range(self.dropoffRange):
-                # Exponential Function here, similar in operation to human hearing. Makes it easier to control at low volumes
+                # I use an approximation of logarithmic volume, as this makes it operate similar to human hearing, which operates
+                #  on a logarithmic scale. My implementation is (x/(dropoffRange))^3. This allows it to scale properly with changing ranges
                 pointVolume = math.pow((float(dropoffPoint + 1) / float(self.dropoffRange)), 3)
                 dropoffPoints[dropoffPoint] = freqPoint(currentStation, pointVolume)
             
@@ -148,42 +136,26 @@ class fictTuner:
         
         logging.info("All frequency points created. Total Length: %d", len(self.points))
 
-    # Information about all stations can be found in stations/stations.json. fictTuner reads this file then builds its list of stations from that
+    # Final assembly of all parts. Organized into seperate functions for cleanliness
     def __init__(self):
         # This takes place over three steps: reading, building stations, and building points
+        # Step 1: Reading data from the file
         self.readStationData()
-        # Now to build station objects from the stationFileData object in self
+        # Step 2: The longest part, building stations
         self.buildStations()
-        
-        # Check for station overflow before I build points
+    
+        # Check for station overflow before I build points. This lobs off any extra stations, but it does spit out something in the logs folder.
         numStations = len(self.stations)
         if numStations > self.maxStations:
             self.stations = self.stations[:self.maxStations]
             numStations = self.maxStations
             logging.warn("Too many stations, only took first %d" % self.maxStations)
 
-        # Building points from the stations built in self.stations
+        # Step 3: Build the spectrum to tune on
         self.buildPoints()
 
         logging.info("FictionalTuner init completed!")
     
+    # Simple function to allow ease-of-access for the point data.
     def getPoint(index):
         return self.points[index]
-
-# Just a testing block, for changes in FictionalTuner
-if __name__=="__main__":
-    logTimeString = time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime())
-    logFileString = "logs/" + logTimeString + ".log"
-
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s [%(levelname)s]%(filename)s: %(message)s",
-                        filename=logFileString)
-
-    consoleHandler = logging.StreamHandler(sys.stdout)
-    consoleHandler.setLevel(logging.INFO)
-    logging.getLogger('').addHandler(consoleHandler)
-
-    startTime = time.localtime()
-    fakeTuner = fictTuner()
-    elapsedTime = time.mktime(time.localtime()) - time.mktime(startTime)
-    logging.debug(elapsedTime)

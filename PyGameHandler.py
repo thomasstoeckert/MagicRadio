@@ -8,6 +8,7 @@ import logging
 import pygame
 import time
 
+# Simply gets the sample rate from a file as an int
 def getSampleRate(audioPath):
     fileInfo = TinyTag.get(audioPath).samplerate
     return int(float(fileInfo))
@@ -20,18 +21,18 @@ def calculateUserVolume():
     return userVolume
 
 
+# This guy prepares pygame and begins playback of static audio. 
 def initPygame():
-    # Setup mixer, begin the loop of static audio
-    # PyGame operates on a fixed audio sample rate for some reason. The MagicRadio operates at a sampleRate of 48000Hz.
+    # PyGame operates on a fixed audio sample rate for some reason. The MagicRadio operates at a sampleRate of 48kHz, slightly higher than CD quality
     defaultSampleRate = getSampleRate(MRGlobals.staticPath)
     pygame.mixer.pre_init(frequency=defaultSampleRate)
     pygame.mixer.init()
 
-    # Setting up static loop. I need to replace this with a better audio file with a smoother loop.
+    # Setup of the static audio, matching to the current volume of the volume knob
     MRGlobals.staticSound = pygame.mixer.Sound(MRGlobals.staticPath)
     staticVolume = calculateUserVolume()
     MRGlobals.staticSound.set_volume(staticVolume) 
-    MRGlobals.staticSound.play(-1)
+    MRGlobals.staticSound.play(-1) # Loop forever
 
 # This is the class for the audio handling thread. It adjusts volume and tuning, both during boot-up and after
 class audioLooper(threading.Thread):
@@ -53,18 +54,19 @@ class audioLooper(threading.Thread):
 
             # Get the point for this frequency on the tuner
             frequency = MRGlobals.tuningInt
-            freqPoint = self.tuner.points[frequency]
+            freqPoint = self.tuner.getPoint(frequency)
             newStation = freqPoint.station
             newVolume = freqPoint.volume
             
-            # Setting up newStation change
+            # If we're switching between different stations, we need to let the new station know
+            #  so it can attempt to resume playback at the proper position
             transferring = False
             if newStation != self.lastStation:
                 transferring = True
                 logging.info("<%s> --> <%s> at %d" % (self.lastStation, newStation, frequency))
                 self.lastStation = newStation
             
-            # Handle track changing through this
+            # Run the update code for the current station. Stations ONLY handle audio files, volume is controlled externally.
             newStation.update(pygame.mixer, transferring)
 
             # The volume of the static sound effect is the inverse of the music volume, so their volumes sum to one.
@@ -72,7 +74,9 @@ class audioLooper(threading.Thread):
             # Master volume is set by the user and their volume knob
             masterVolume = calculateUserVolume()
 
-            # Since I can't seem to find any way to actually set the pygame volume overall, so I multiply volume of each effect and master
+            # Since I can't seem to find any way to actually set the pygame volume overall, I multiply the 
+            #  volume of each effect and master for the same effect
             MRGlobals.staticSound.set_volume(invVolume * masterVolume)
             pygame.mixer.music.set_volume(newVolume * masterVolume)
+            # Sleep for whatever the clock delay is
             time.sleep(MRGlobals.clockSleep)

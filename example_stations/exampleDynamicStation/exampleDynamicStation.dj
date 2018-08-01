@@ -1,0 +1,57 @@
+{
+    "minSongs": 2,
+    "maxSongs": 7,
+    "format": [
+        {
+            "segmentLabel": "exampleIntro",
+            "type": "pick",
+            "dir": "intros"
+        },
+        {
+            "segmentLabel": "exampleDynamicBody",
+            "type": "dynamicPick",
+            "segments": [
+                {
+                    "segmentLabel": "exampleDynamicElement",
+                    "type": "dynamic",
+                    "segments": [
+                        {
+                            "segmentLabel": "example1 Intro",
+                            "type": "chance",
+                            "dir": "example1Intro",
+                            "rarity": 0.8
+                        },
+                        {
+                            "segmentLabel": "example1 Body",
+                            "type": "pick",
+                            "dir": "example1Body"
+                        }
+                    ]
+                },
+                {
+                    "segmentLabel": "exampleDynamicElement2",
+                    "type": "dynamic",
+                    "segments": [
+                        {
+                            "segmentLabel": "example2 Intro",
+                            "type": "countPick",
+                            "dir": "example2Intros",
+                            "max": 3,
+                            "min": 1
+                        },
+                        {
+                            "segmentLabel": "example2 Body",
+                            "type": "pick",
+                            "dir": "example2Body"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "segmentLabel": "exampleOutro",
+            "type": "pick",
+            "dir": "outros"
+        }
+    ]
+}

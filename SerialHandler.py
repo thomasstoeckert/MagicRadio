@@ -1,5 +1,6 @@
 """
-    This file handles the initialization of the serial communication
+    This file handles the initialization of the serial communication between the raspberry pi and arduino.
+    Also known as the littlest file
 """
 import MRGlobals
 import serial

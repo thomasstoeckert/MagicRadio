@@ -9,13 +9,13 @@ import os
 
 """
     Short description:
-        The immidiate parent of this file will be the Fictional tuner. Fictional Tuner will handle the tuning and freqPoints
         The purpose of this file is to handle the station objects, fetching of track path, and the handling of dj shows. 
 
     Station Class Stuff:
         Each station contains:
          - Type of station
          - Station Directory
+         - List of tracks
          - Dictionary of station durations
         Pick Stations also have:
          - Last played
@@ -29,26 +29,59 @@ import os
     
     Each Station type is a child class. This way, the logic for updating is well organized and clear. It also allows
      the parent class to have one unified import/setup.
+    
+    The update function passes the audio mixer and a boolean representing if it is transferring from another station.
+     The transfer variable is used to determine whether to resume playback of the same song.
 
     Different types of stations:
      - Static: No music. It just stops the playback upon transferring
+
      - Fixed: Standard audio loop, persistence is maintained by resuming playback with the remainder of the song time 
         and the date established in MRGlobals. In actuality, there should only be one song in the folder of the Fixed
-        station, and it should have the same name as the folder (with the .ogg extension)
-        [Implementation Status]: Implemented
+        station. If there are more than one, it just grabs the first one the OS gives it.
+
      - Pick: Folder containing multiple tracks. To maintain persistence between radio switching, every time a new song
         starts the song name and start time is saved. Each tick, the station checks the elapsed time against the
         duration of the song. If greater, it'll pick a new song from a shuffled list at random with the remaining time from the check.
         On reboot, all progression is lost.
-        [Implementation Status]: Implemented
+        
      - Dynamic: Pick Station with included DJ shows interjected. Maintains a countdown of songs until DJ begins. Also
-        maintains persistance with DJ shows. Simple rule (kinda cheaty, but ah well), it always starts on a music track. It
+        maintains persistance with DJ shows. Simple rule (allows users to hear what station it is), it always starts on a DJ show. It
         only attempts to resume playback on a DJ show if the DJ show hasn't elapsed.
-        [Implementation Status]: In Progress
+        
 """
-# This is literally only to stop music, it does nothing else.
-class StaticStation:
 
+def buildStation(stationData):
+    # All stations have 'type' as a part of their definition in stations.json
+    stationType = stationData["type"]
+
+    # The Bluetooth station's job is to mute static and turn on the audio of the BT script.
+    # Of course, I actually need to implement the sound controls for bluetooth first.
+
+    # TODO: Implement Bluetooth
+    if(stationType == "bluetooth"):
+        logging.warn("Bluetooth is not implemented. Get on this, Thomas, though I understand you are busy with other stuff.")
+        continue
+    
+    # All station types except for bluetooth have a 'dir' attribute. At this point, it should be safe to grab
+    stationDir = stationData["dir"]
+
+    # Generate stations based upon type
+    if(stationType == "pick"):
+        stationObject = Station.PickStation(stationDir)
+    elif(stationType == "dynamic"):
+        stationObject = Station.DynamicStation(stationDir)
+    else:
+        # While there is a type for static/fixed stations, this catches everything just in case
+        stationObject = Station.Station(stationDir)
+
+    logging.debug("Station %s has been built" % stationDir)
+
+    return stationObject
+
+
+# This is literally only to stop music, and simplify tuner logic. It does nothing else.
+class StaticStation:
     def update(self, mixer, transfer):
         if transfer:
             mixer.music.stop()
@@ -57,6 +90,8 @@ class StaticStation:
     def __str__(self):
         return "static"
 
+
+# The main Station class, handles the file finding for music alongside the duration searching
 class Station:
 
     stationType = "fixed"
@@ -74,11 +109,6 @@ class Station:
             logging.debug(self.fullStationPath + track)
             self.trackDurations[track] = float(TinyTag.get(self.fullStationPath + track).duration)
 
-        """
-            These two variables are used for pick stations and dynamic stations, used to maintain persistence so switching is smooth and believeable. 
-            They are unused in the default station object.
-        """
-
     def __str__(self):
         return "(%s)[%s | %d]" % (self.stationType, self.stationDirectory, len(self.tracks))
 
@@ -93,6 +123,8 @@ class Station:
 
             # Begin by setting up new lead variable and stopping the music. Static will continue, so the slight jump shouldn't be noticable
             mixer.music.stop()
+            # We shouldn't technically need to stop the music, considering mixer.music.load() stops it AND it should always be stopped on static, 
+            #  but just in case.
             lead = 0.0
 
             # Only getting the first track, since it's a fixed station. Track logic differs per station type
@@ -127,23 +159,31 @@ class Station:
      played song. It then begins this at the remainder offset, updates the lastSong and lastSongEpoch. In absence of
      a last played song, it'll pick one at random and begin its offset with the same system a Station uses, related
      to the MRGlobals epcoh.
-
 """
 class PickStation(Station):
-    # There is no special initialization behavior for a pick station. All tracks are discovered in Station, and the
-    #  lastTrack variables are initialized there
+    # No special init logic, just the basic variable setup.
     def __init__(self, stationDirectory):
         Station.__init__(self, stationDirectory)
         # Setup variables used for update
         self.lastTrack = ""
         self.lastTrackEpoch = 0.0
         self.lastTrackDuration = 0.0
-        self.ignoredTracks = [""] * 4
+
+        # Establishing ignored track length. By default, it's 4, but if we're a bit close it'll be below that.
+        ignoredCount = 4
+        trackCount = len(self.tracks)
+        if trackCount <= ignoredCount:
+            ignoredCount = trackCount - 1
+            if ignoredCount <= 1:
+                ignoredCount = 1
+
+        self.ignoredTracks = [""] * ignoredCount
 
 
     stationType = "pick"
 
     # pickTrack is a simple little guy, just handles all the logic and errors for picking a new track
+    #  It attempts to avoid the last four tracks played. 
     def pickTrack(self):
         pickableTracks = list(self.tracks)
         # Trying to prevent the last three songs from playing again.
@@ -218,10 +258,12 @@ class DynamicStation(PickStation):
             logging.critical("%s.dj is improper" % self.stationDirectory)
         assert(self.djFileData is not None), ("Error in DJFile Data for %s, shutting down." % self.stationDirectory)
 
-        logging.info("%s.dj has been found and read properly" % self.stationDirectory)
+        logging.debug("%s.dj has been found and read properly" % self.stationDirectory)
 
         # Now that we have the data, we need to build ourselves a DJ.
         self.dj = DJ.DJ(self.fullStationPath, self.djFileData["format"])
+
+        logging.debug("%s.dj has been built properly" % self.stationDirectory)
 
         # We also need to prep our song ranges
         self.minTracks = int(self.djFileData["minSongs"])
@@ -236,15 +278,11 @@ class DynamicStation(PickStation):
         self.mode = "music"
         self.remainingTracks = -1
     
+    # Same logic as a pickstation, but with the addition of a counter to handle the switching between modes
     def pickTrack(self):
         picked = PickStation.pickTrack(self)
         self.remainingTracks -= 1
         return picked
-    
-    def advanceSegment(self):
-        self.showIndex += 1
-        if self.showIndex > len(self.lastShow):
-            self.mode == "music"
 
     def update(self, mixer, transfer):
         if self.mode == "music":
@@ -315,6 +353,3 @@ class DynamicStation(PickStation):
                     mixer.music.play()
                     mixer.music.set_pos(lead)
                     logging.info("<%s> Resuming segment at %d" % (self, lead))
-            
-
-

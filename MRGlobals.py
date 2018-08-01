@@ -10,10 +10,12 @@ djIntersperse = 1.32
 # Communication Variables
 lastLineReceived = ""
 volumeInt = 0
+volumeFloor = 20
 volumeOn = True
 tuningInt = 68
 
 # Serial Variables
+# Change serial path to match the path of your arduino
 serialPath = "/dev/serial/by-id/usb-Arduino__www.arduino.cc__0043_75638303037351306140-if00"
 serialBaud = 9600
 
