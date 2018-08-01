@@ -61,19 +61,19 @@ def buildStation(stationData):
     # TODO: Implement Bluetooth
     if(stationType == "bluetooth"):
         logging.warn("Bluetooth is not implemented. Get on this, Thomas, though I understand you are busy with other stuff.")
-        continue
+        return None
     
     # All station types except for bluetooth have a 'dir' attribute. At this point, it should be safe to grab
     stationDir = stationData["dir"]
 
     # Generate stations based upon type
     if(stationType == "pick"):
-        stationObject = Station.PickStation(stationDir)
+        stationObject = PickStation(stationDir)
     elif(stationType == "dynamic"):
-        stationObject = Station.DynamicStation(stationDir)
+        stationObject = DynamicStation(stationDir)
     else:
         # While there is a type for static/fixed stations, this catches everything just in case
-        stationObject = Station.Station(stationDir)
+        stationObject = Station(stationDir)
 
     logging.debug("Station %s has been built" % stationDir)
 
@@ -86,7 +86,7 @@ class StaticStation:
         if transfer:
             mixer.music.stop()
             logging.debug("Static Station has halted music playback")
-    
+
     def __str__(self):
         return "static"
 
@@ -105,8 +105,6 @@ class Station:
         # Build duration list
         self.trackDurations = {}
         for track in self.tracks:
-            logging.debug(track)
-            logging.debug(self.fullStationPath + track)
             self.trackDurations[track] = float(TinyTag.get(self.fullStationPath + track).duration)
 
     def __str__(self):
@@ -178,6 +176,7 @@ class PickStation(Station):
                 ignoredCount = 1
 
         self.ignoredTracks = [""] * ignoredCount
+        logging.debug(len(self.ignoredTracks))
 
 
     stationType = "pick"

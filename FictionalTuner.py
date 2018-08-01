@@ -58,7 +58,9 @@ class fictTuner:
         self.stations = []
         for stationData in self.stationFileData:
             newStation = Station.buildStation(stationData)
-            self.stations.append(newStation)
+            # Sometimes it's not quite implemented, this prevents runtime errors
+            if newStation is not None:
+                self.stations.append(newStation)
 
         logging.info("Stations have been built")
 
@@ -157,5 +159,5 @@ class fictTuner:
         logging.info("FictionalTuner init completed!")
     
     # Simple function to allow ease-of-access for the point data.
-    def getPoint(index):
+    def getPoint(self, index):
         return self.points[index]
