@@ -13,7 +13,7 @@ lastLineReceived = ""
 volumeInt = 0
 volumeFloor = 20
 volumeOn = True
-tuningInt = 68
+tuningInt = 0
 
 # Serial Variables
 # Change serial path to match the path of your arduino
