@@ -21,6 +21,7 @@ serialBaud = 9600
 
 # File Paths
 staticPath = "audio/static.ogg"
+bootAudioPath = "audio/radio-boot.ogg"
 stationsFolder = "stations/"
 stationsJsonPath = stationsFolder + "/stations.json"
 
