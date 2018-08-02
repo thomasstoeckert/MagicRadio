@@ -25,3 +25,5 @@ def init_logging():
     logging.getLogger('').addHandler(consoleHandler)
     # Setup crash handler
     sys.excepthook = uncaught_handler
+
+    logging.info("Logging has begun")

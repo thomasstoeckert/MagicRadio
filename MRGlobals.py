@@ -6,6 +6,7 @@ booting = True
 clockSleep = 0.016
 clockTime = 1529790107.954772
 djIntersperse = 1.32
+logDeathInDays = 3
 
 # Communication Variables
 lastLineReceived = ""

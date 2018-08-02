@@ -2,6 +2,7 @@
 import FictionalTuner
 import SerialHandler
 import PyGameHandler
+import LogHistorian
 import InputControl
 import MRGlobals
 import MRLogging
@@ -16,6 +17,9 @@ bootTime = time.time()
 
 # Initialize logging
 MRLogging.init_logging()
+
+# Delete logs that are out of date
+LogHistorian.deleteAgedLogs()
 
 # Initialize the connection with the arduino
 logging.info("Connecting to Arduino...")

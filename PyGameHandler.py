@@ -52,7 +52,7 @@ class audioLooper(threading.Thread):
             if MRGlobals.booting:
                 MRGlobals.staticSound.set_volume(calculateUserVolume())
                 continue
-            elif self.booted = False:
+            elif self.booted == False:
                 self.booted = True
                 # Play the bootSound to let the user know the radio is ready
                 bootSound = pygame.mixer.Sound(MRGlobals.bootAudioPath)
