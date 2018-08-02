@@ -78,6 +78,13 @@ This was written for python 2.7, which comes standard in raspbian. It only relie
 ### Configuration
 Two folders must be created, `stations` and `logs`.
 `stations` will hold all stations you wish to play, defined in `stations/stations.json` Please view the example files inside `example_stations`, as well as the documentation for these files in their readme and the wiki.
+
+`MRGlobals.py` holds the path to your arduino's location. It currently holds mine. This probably will not be your arduino. Change `serialPath` to match the serial path of your arduino. 
+`MRGlobals.py` also holds a few options that are configurable. 
+* `clockSleep` is the time the program sleeps when updating the playback loop and inputcontrol loop. By default it's 1/60th of a second. Increase it for better control if you have better hardware.
+* `djIntersperse` is the time between DJ segments. This is useful for spacing out dj tracks to make it sound more natural. By default it's 1.32 seconds, which I've found to be the most accurate.
+* `logDeathInDays` is how old in days a log must be before it dies from the LogHistorian. The log files can get quite big, so it's best to delete old ones.
+* `volumeFloor` is the minimum volume int. Volume input from the arduino can have some electrical noise, so when at the lowest edge of the spectrum we lock it to a minimum to prevent it from jumping to silence at random. Configure this as you will.
 ### Headless boot
 If you wish for the MagicRadio to operate on boot of the raspberry pi without user interaction, [here](https://gist.github.com/thomasstoeckert/c6a16576ec855acb43e1dab59cb54f41) is a `.service` file for linux/raspbian. 
 
