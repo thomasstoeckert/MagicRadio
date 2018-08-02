@@ -102,6 +102,8 @@ class Station:
         self.fullStationPath = MRGlobals.stationsFolder + self.stationDirectory + "/"
         # Build track list - the stationDir will contain all music at root. DJ stations contain their own info in the "dj" subfolder
         self.tracks = [file for file in os.listdir(self.fullStationPath) if file.endswith(".ogg")]
+        if len(self.tracks) <= 0:
+            logging.critical("%s has no audio in its folder" % self.stationDirectory)
         # Build duration list
         self.trackDurations = {}
         for track in self.tracks:
