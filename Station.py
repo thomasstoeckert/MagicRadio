@@ -277,7 +277,7 @@ class DynamicStation(PickStation):
         self.showIndex = 0
 
         self.mode = "music"
-        self.remainingTracks = -1
+        self.remainingTracks = 1
     
     # Same logic as a pickstation, but with the addition of a counter to handle the switching between modes
     def pickTrack(self):
