@@ -22,3 +22,5 @@ def deleteAgedLogs():
         if elapsed > max_time:
             logging.debug("Removing outdated log %s" % log)
             os.remove("logs/" + log)
+        else:
+            logging.debug("Log %s is still in good standing" % log)

@@ -43,7 +43,7 @@ On boot, the raspberry pi starts the script `MagicRadio.py` in its directory. `M
 2. Initializes the Serial connection to the raspberry pi with `SerialHandler.py`
 3. Creates and runs the thread which parses and stores the input variables from the serial connection in `InputControl.py`
 4. Initializes the playback loop through `PyGameHandler.py`
-5. Creates the tuning spectrum from `FicionalTuner.py` and finally passes that back to the `PyGameHandler.py`
+5. Creates the tuning spectrum from `FictionalTuner.py` and finally passes that back to the `PyGameHandler.py`
 
 ### Explanation of the Tuning Spectrum
 `analogRead` in an arduino will put out a number ranging from 0 to 1023. As such, there are a possible 1024 positions on the tuning spectrum with a standard potentiometer. To create the effect of tuning a radio between different stations, the program builds a list 1024 elements long which stores both the `station` the radio would be tuned to and the `volume` of the station at each point.
