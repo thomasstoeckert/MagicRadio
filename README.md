@@ -22,7 +22,7 @@ Over the past couple of months, I took an old 1930's Silvertone radio which was 
 
 
 ## Technical Details of the Radio Itself
-The build log for the physical portion of the radio is documented on the [WDWMagic Forums](https://forums.wdwmagic.com/threads/the-magicradio-feat-the-jungle-cruises-albert-awol.945308/) and the google photos album of the build is located [here](https://photos.app.goo.gl/fU9hhGLBr1hyLAPs6), but a brief summary of the technical details are listed here for ease of access.
+The google photos album of the build is located [here](https://photos.app.goo.gl/fU9hhGLBr1hyLAPs6), but a brief summary of the technical details are listed here for ease of access.
 
 The radio is powered by a 1st gen Raspberry Pi B+, with both a bluetooth (to allow use as a bluetooth speaker, done using instructions [here](https://gist.github.com/mill1000/74c7473ee3b4a5b13f6325e9994ff84c)) and a wifi dongle (used to connect wirelessly for development). It connects via USB/Serial to an Arduino Uno, which reads the status of both potentiometers (one for volume, one for tuning). The volume potentiometer is actually an original part from the radio, including a switch which allows turning on/off the radio when the dial is turned all the way to the left. 
 
